@@ -9,9 +9,19 @@
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+cp .env.example .env
+python -c 'import secrets; print(secrets.token_urlsafe(50))'
+```
+
+Скопіювати згенерований ключ у поле `DJANGO_SECRET_KEY` файлу `.env`, потім завантаж змінні та запусти застосунок:
+
+```bash
+source .env
 python manage.py migrate
 python manage.py runserver
 ```
+
+Файл `.env` ігнорується Git. `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS` і `DJANGO_DB_PATH` налаштовуються через змінні середовища. Для production встанови `DJANGO_DEBUG=false`, задай секретний ключ і список доменів у `DJANGO_ALLOWED_HOSTS`. Без ключа або списку доменів при вимкненому debug застосунок не запуститься.
 
 Службова перевірка доступна за адресою `GET http://127.0.0.1:8000/health` і повертає:
 
@@ -19,7 +29,7 @@ python manage.py runserver
 {"status": "ok"}
 ```
 
-Для створення адміністратора виконайте `python manage.py createsuperuser`. Локальне значення секретного ключа призначене лише для розробки; перед розгортанням задайте змінну середовища `DJANGO_SECRET_KEY` і вимкніть режим налагодження через `DJANGO_DEBUG=false`.
+Для створення адміністратора виконайте `python manage.py createsuperuser`.
 
 ## Структура
 

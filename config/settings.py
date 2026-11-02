@@ -1,14 +1,17 @@
 import os
 from pathlib import Path
 
+from config.environment import get_allowed_hosts, get_bool, get_secret_key
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-local-development-key-change-before-deployment",
-)
-DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+SECRET_KEY = get_secret_key()
+DEBUG = get_bool("DJANGO_DEBUG", default=False)
+ALLOWED_HOSTS = get_allowed_hosts(debug=DEBUG)
+
+database_path = Path(os.environ.get("DJANGO_DB_PATH", "db.sqlite3"))
+if not database_path.is_absolute():
+    database_path = BASE_DIR / database_path
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -57,7 +60,7 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": database_path,
         "TEST": {
             "NAME": BASE_DIR / "test_db.sqlite3",
         },
