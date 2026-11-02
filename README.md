@@ -1,6 +1,6 @@
 # Task Tracker
 
-Базовий каркас системи керування проєктами та задачами
+Базовий каркас системи керування проєктами та задачами на Django і Django REST Framework.
 ## Запуск локально
 
 Потрібен Python 3.12 або новіший.
@@ -58,6 +58,24 @@ erDiagram
         date due_date
     }
 ```
+
+## REST API
+
+Колекції та деталі проєктів і задач доступні за адресами:
+
+- `/api/projects/` і `/api/projects/{id}/`
+- `/api/tasks/` і `/api/tasks/{id}/`
+
+Для обох ресурсів доступні `GET`, `POST`, `PUT`, `PATCH` і `DELETE`. Щоб створити проєкт, передайте `manager_id`; для задачі — `project_id` і за потреби `assignee_id`. Відповіді містять вкладені дані менеджера, проєкту та виконавця.
+
+Списки повертаються сторінками по 20 записів. Номер сторінки задається параметром `page`. Фільтри:
+
+- Проєкти: `name`, `manager`, `created_after`, `created_before`.
+- Задачі: `project`, `status`, `priority`, `assignee`, `due_after`, `due_before`.
+
+Сортування задається параметром `ordering`; префікс `-` сортує у зворотному порядку. Наприклад: `/api/tasks/?status=in_progress&ordering=-due_date&page=2`.
+
+Помилки API повертаються у форматі `application/problem+json` за RFC 7807. Колекції використовують `select_related` для завантаження пов'язаних даних без N+1-запитів.
 
 ## Перевірки коду
 
