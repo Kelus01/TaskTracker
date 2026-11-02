@@ -1,6 +1,6 @@
 # Task Tracker
 
-Базовий каркас системи керування проєктами та задачами на Django і Django REST Framework.
+Базовий каркас системи керування проєктами та задачами
 ## Запуск локально
 
 Потрібен Python 3.12 або новіший.
@@ -34,6 +34,7 @@ erDiagram
     USER ||--o{ PROJECT : manages
     PROJECT ||--o{ TASK : contains
     USER o|--o{ TASK : assigned_to
+    TASK ||--o{ ATTACHMENT : contains
 
     USER {
         int id
@@ -57,6 +58,13 @@ erDiagram
         int assignee_id
         date due_date
     }
+    ATTACHMENT {
+        int id
+        string original_filename
+        string content_type
+        int size
+        int task_id
+    }
 ```
 
 ## REST API
@@ -77,9 +85,21 @@ erDiagram
 
 Помилки API повертаються у форматі `application/problem+json` за RFC 7807. Колекції використовують `select_related` для завантаження пов'язаних даних без N+1-запитів.
 
+## Документація API та вкладення
+
+- Swagger UI: `http://127.0.0.1:8000/api/docs/`.
+- OpenAPI JSON: `http://127.0.0.1:8000/api/schema/?format=json`.
+- Список і завантаження файлів задачі: `GET` і `POST /api/tasks/{id}/attachments/`.
+- Отримання файла: `GET /api/tasks/{id}/attachments/{attachment_id}/download/`.
+
+Файл передається як `multipart/form-data` у полі `file`. Дозволені PDF, PNG, JPEG і UTF-8 TXT розміром до 5 МБ; перевіряються розширення, MIME-тип і вміст. Файли зберігаються у `MEDIA_ROOT` (за замовчуванням — каталог `media/`), а при видаленні задачі вкладення й відповідні файли видаляються.
+
 ## Перевірки коду
 
 ```bash
 ruff check .
 ruff format --check .
+python manage.py test
 ```
+
+Інтеграційні тести використовують окрему SQLite-базу `test_db.sqlite3`, яка створюється Django під час запуску тестів.

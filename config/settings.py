@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "django_filters",
+    "drf_spectacular",
     "accounts",
     "projects",
 ]
@@ -57,6 +58,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "TEST": {
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        },
     }
 }
 
@@ -78,6 +82,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": [
         "projects.filters.StrictDjangoFilterBackend",
         "rest_framework.filters.OrderingFilter",
@@ -86,3 +91,15 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "config.exceptions.problem_exception_handler",
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Task Tracker API",
+    "DESCRIPTION": "API для керування проєктами, задачами та вкладеннями.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024

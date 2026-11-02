@@ -3,7 +3,7 @@ from datetime import date
 from django.db import models
 
 from accounts.models import User
-from projects.models import Project, Task
+from projects.models import Attachment, Project, Task
 
 
 class ProjectRepository:
@@ -77,3 +77,30 @@ class TaskRepository:
     @staticmethod
     def delete(task: Task) -> None:
         task.delete()
+
+
+class AttachmentRepository:
+    @staticmethod
+    def list_for_task(task: Task) -> models.QuerySet[Attachment]:
+        return Attachment.objects.filter(task=task).order_by("-created_at", "-id")
+
+    @staticmethod
+    def create(
+        *,
+        task: Task,
+        file,
+        original_filename: str,
+        content_type: str,
+        size: int,
+    ) -> Attachment:
+        return Attachment.objects.create(
+            task=task,
+            file=file,
+            original_filename=original_filename,
+            content_type=content_type,
+            size=size,
+        )
+
+    @staticmethod
+    def get_for_task(*, task: Task, attachment_id: int) -> Attachment:
+        return Attachment.objects.get(task=task, pk=attachment_id)

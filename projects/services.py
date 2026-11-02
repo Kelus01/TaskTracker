@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 
 from accounts.models import User
-from projects.models import Project, Task
-from projects.repositories import ProjectRepository, TaskRepository
+from projects.models import Attachment, Project, Task
+from projects.repositories import AttachmentRepository, ProjectRepository, TaskRepository
 
 
 class ProjectService:
@@ -76,3 +76,30 @@ class TaskService:
     @staticmethod
     def delete_task(task: Task) -> None:
         TaskRepository.delete(task)
+
+
+class AttachmentService:
+    @staticmethod
+    def list_for_task(task: Task) -> QuerySet[Attachment]:
+        return AttachmentRepository.list_for_task(task)
+
+    @staticmethod
+    def create(
+        *,
+        task: Task,
+        file,
+        original_filename: str,
+        content_type: str,
+        size: int,
+    ) -> Attachment:
+        return AttachmentRepository.create(
+            task=task,
+            file=file,
+            original_filename=original_filename,
+            content_type=content_type,
+            size=size,
+        )
+
+    @staticmethod
+    def get_for_task(*, task: Task, attachment_id: int) -> Attachment:
+        return AttachmentRepository.get_for_task(task=task, attachment_id=attachment_id)
