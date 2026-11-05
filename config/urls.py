@@ -7,6 +7,7 @@ from config.views import health
 from projects.views import (
     AttachmentDownloadView,
     ProjectViewSet,
+    RepositorySyncJobDetailView,
     TaskAttachmentListCreateView,
     TaskViewSet,
 )
@@ -34,5 +35,10 @@ urlpatterns = [
         "api/tasks/<int:task_id>/attachments/<int:attachment_id>/download/",
         AttachmentDownloadView.as_view(),
         name="attachment-download",
+    ),
+    path(
+        "api/repository-sync-jobs/<int:job_id>/",
+        RepositorySyncJobDetailView.as_view(),
+        name="repository-sync-job-detail",
     ),
 ]

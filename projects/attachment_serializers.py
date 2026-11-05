@@ -1,8 +1,15 @@
 from django.urls import reverse
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from projects.models import Attachment
 from projects.validators import validate_attachment_file
+
+
+@extend_schema_field(OpenApiTypes.BINARY)
+class BinaryFileField(serializers.FileField):
+    pass
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -32,7 +39,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 
 class AttachmentUploadSerializer(serializers.Serializer):
-    file = serializers.FileField()
+    file = BinaryFileField()
 
     def validate_file(self, uploaded_file):
         validate_attachment_file(uploaded_file)

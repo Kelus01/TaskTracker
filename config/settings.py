@@ -1,13 +1,25 @@
 import os
 from pathlib import Path
 
-from config.environment import get_allowed_hosts, get_bool, get_secret_key
+from config.environment import get_allowed_hosts, get_bool, get_int, get_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = get_secret_key()
 DEBUG = get_bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = get_allowed_hosts(debug=DEBUG)
+GITHUB_API_TIMEOUT_SECONDS = get_int(
+    "GITHUB_API_TIMEOUT_SECONDS",
+    default=5,
+    minimum=1,
+    maximum=30,
+)
+GITHUB_CACHE_TTL_SECONDS = get_int(
+    "GITHUB_CACHE_TTL_SECONDS",
+    default=60,
+    minimum=1,
+    maximum=3600,
+)
 
 database_path = Path(os.environ.get("DJANGO_DB_PATH", "db.sqlite3"))
 if not database_path.is_absolute():

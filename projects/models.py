@@ -14,6 +14,7 @@ def attachment_upload_path(instance, filename):
 class Project(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    github_repository = models.CharField(max_length=200, blank=True, default="")
     manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -67,6 +68,14 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["project", "status", "due_date", "id"],
+                name="task_proj_status_due_id_idx",
+            ),
+        ]
+
 
 class Attachment(models.Model):
     task = models.ForeignKey(
@@ -82,3 +91,70 @@ class Attachment(models.Model):
 
     def __str__(self):
         return self.original_filename
+
+
+class ProjectCommit(models.Model):
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="commits",
+    )
+    sha = models.CharField(max_length=40)
+    message = models.TextField()
+    author = models.CharField(max_length=200, blank=True)
+    committed_at = models.DateTimeField()
+    html_url = models.URLField(max_length=500)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "sha"],
+                name="project_commit_sha_unique",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["project", "-committed_at", "-id"],
+                name="project_commit_recent_idx",
+            ),
+        ]
+
+    def __str__(self):
+        first_line = self.message.splitlines()[0] if self.message else ""
+        return f"{self.sha[:7]} {first_line}"
+
+
+class RepositorySyncJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Очікує"
+        PROCESSING = "processing", "Виконується"
+        DONE = "done", "Завершено"
+        FAILED = "failed", "Помилка"
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="repository_sync_jobs",
+    )
+    repository = models.CharField(max_length=200)
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    commits_synced = models.PositiveIntegerField(default=0)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["status", "created_at", "id"],
+                name="sync_job_pending_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Repository sync {self.pk}: {self.status}"

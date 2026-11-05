@@ -3,14 +3,21 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiRequest, extend_schema, extend_schema_view
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from projects.attachment_serializers import AttachmentSerializer, AttachmentUploadSerializer
 from projects.filters import ProjectFilter, TaskFilter
-from projects.models import Project, Task
-from projects.serializers import ProjectSerializer, TaskSerializer
+from projects.models import Project, RepositorySyncJob, Task
+from projects.repository_sync import RepositorySyncService
+from projects.serializers import (
+    ProjectCommitSerializer,
+    ProjectSerializer,
+    RepositorySyncJobSerializer,
+    TaskSerializer,
+)
 from projects.services import AttachmentService, ProjectService, TaskService
 
 
@@ -47,6 +54,33 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance: Project) -> None:
         ProjectService.delete_project(instance)
+
+    @action(detail=True, methods=["post"], url_path="repository-sync")
+    @extend_schema(
+        summary="Queue GitHub repository synchronization",
+        description=(
+            "Queues synchronization of the latest commits. The HTTP response does not wait "
+            "for GitHub; poll the returned job URL for its status."
+        ),
+        responses={202: RepositorySyncJobSerializer},
+        tags=["GitHub integration"],
+    )
+    def repository_sync(self, request, pk=None):
+        project = self.get_object()
+        job = RepositorySyncService.enqueue(project)
+        return Response(RepositorySyncJobSerializer(job).data, status=202)
+
+    @action(detail=True, methods=["get"], url_path="commits")
+    @extend_schema(
+        summary="List synchronized GitHub commits",
+        description="Returns the latest commits stored for the project.",
+        responses=ProjectCommitSerializer(many=True),
+        tags=["GitHub integration"],
+    )
+    def commits(self, request, pk=None):
+        project = self.get_object()
+        commits = project.commits.order_by("-committed_at", "-id")[:20]
+        return Response(ProjectCommitSerializer(commits, many=True).data)
 
 
 @extend_schema_view(
@@ -152,3 +186,15 @@ class AttachmentDownloadView(APIView):
             filename=attachment.original_filename,
             content_type=attachment.content_type,
         )
+
+
+class RepositorySyncJobDetailView(APIView):
+    @extend_schema(
+        summary="Get repository sync job status",
+        description="Returns the persisted status and outcome of a repository sync job.",
+        responses=RepositorySyncJobSerializer,
+        tags=["GitHub integration"],
+    )
+    def get(self, request, job_id: int):
+        job = get_object_or_404(RepositorySyncJob, pk=job_id)
+        return Response(RepositorySyncJobSerializer(job).data)

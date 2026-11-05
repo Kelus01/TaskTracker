@@ -12,10 +12,17 @@ class ProjectRepository:
         return Project.objects.select_related("manager")
 
     @staticmethod
-    def create(*, name: str, manager: User, description: str = "") -> Project:
+    def create(
+        *,
+        name: str,
+        manager: User,
+        description: str = "",
+        github_repository: str = "",
+    ) -> Project:
         return Project.objects.create(
             name=name,
             description=description,
+            github_repository=github_repository,
             manager=manager,
         )
 

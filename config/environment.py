@@ -23,6 +23,21 @@ def get_secret_key() -> str:
     return secret_key
 
 
+def get_int(name: str, *, default: int, minimum: int, maximum: int) -> int:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} must be an integer.") from exc
+
+    if not minimum <= parsed <= maximum:
+        raise ImproperlyConfigured(f"{name} must be between {minimum} and {maximum}.")
+    return parsed
+
+
 def get_allowed_hosts(*, debug: bool) -> list[str]:
     value = os.environ.get("DJANGO_ALLOWED_HOSTS")
     if value is None:

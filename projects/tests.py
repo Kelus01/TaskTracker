@@ -116,6 +116,16 @@ class ProjectTaskApiTests(APITestCase):
         self.assertEqual(filtered.status_code, 200)
         self.assertEqual(filtered.data["count"], 11)
 
+    def test_project_status_due_date_query_uses_composite_index(self):
+        project = Project.objects.create(name="Indexed project", manager=self.manager)
+
+        query = Task.objects.filter(
+            project=project,
+            status=Task.Status.TODO,
+        ).order_by("due_date", "id")
+
+        self.assertIn("task_proj_status_due_id_idx", query.explain())
+
     def test_invalid_input_returns_problem_details(self):
         response = self.client.post(
             "/api/projects/",
@@ -257,6 +267,8 @@ class ApiDocumentationTests(APITestCase):
         self.assertIn("/api/tasks/", schema["paths"])
         self.assertIn("/api/tasks/{task_id}/attachments/", schema["paths"])
         self.assertIn("/api/tasks/{task_id}/attachments/{attachment_id}/download/", schema["paths"])
+        upload_schema = schema["components"]["schemas"]["AttachmentUpload"]
+        self.assertEqual(upload_schema["properties"]["file"]["format"], "binary")
 
         docs_response = self.client.get("/api/docs/")
         self.assertEqual(docs_response.status_code, 200)

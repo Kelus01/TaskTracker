@@ -1,7 +1,9 @@
+import re
+
 from rest_framework import serializers
 
 from accounts.models import User
-from projects.models import Project, Task
+from projects.models import Project, ProjectCommit, RepositorySyncJob, Task
 from projects.services import ProjectService, TaskService
 
 
@@ -29,13 +31,28 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ["id", "name", "description", "manager", "manager_id", "created_at"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "github_repository",
+            "manager",
+            "manager_id",
+            "created_at",
+        ]
         read_only_fields = ["id", "created_at"]
 
     def validate_manager_id(self, manager):
         if manager.role not in (User.Role.ADMIN, User.Role.PROJECT_MANAGER):
             raise serializers.ValidationError("Користувач не може керувати проєктами.")
         return manager
+
+    def validate_github_repository(self, value):
+        if value and not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", value):
+            raise serializers.ValidationError(
+                "Вкажіть GitHub-репозиторій у форматі owner/repository."
+            )
+        return value
 
     def create(self, validated_data):
         return ProjectService.create_project(**validated_data)
@@ -83,3 +100,27 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return TaskService.update_task(instance, **validated_data)
+
+
+class ProjectCommitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCommit
+        fields = ["sha", "message", "author", "committed_at", "html_url"]
+        read_only_fields = fields
+
+
+class RepositorySyncJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RepositorySyncJob
+        fields = [
+            "id",
+            "project",
+            "repository",
+            "status",
+            "commits_synced",
+            "error_message",
+            "created_at",
+            "started_at",
+            "completed_at",
+        ]
+        read_only_fields = fields

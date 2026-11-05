@@ -14,12 +14,19 @@ class ProjectService:
         return ProjectRepository.list()
 
     @staticmethod
-    def create_project(*, name: str, manager: User, description: str = "") -> Project:
+    def create_project(
+        *,
+        name: str,
+        manager: User,
+        description: str = "",
+        github_repository: str = "",
+    ) -> Project:
         if manager.role not in (User.Role.ADMIN, User.Role.PROJECT_MANAGER):
             raise ValidationError({"manager": "Користувач не може керувати проєктами."})
         return ProjectRepository.create(
             name=name,
             description=description,
+            github_repository=github_repository,
             manager=manager,
         )
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 
-from config.environment import get_allowed_hosts, get_bool, get_secret_key
+from config.environment import get_allowed_hosts, get_bool, get_int, get_secret_key
 
 
 class EnvironmentSettingsTests(SimpleTestCase):
@@ -40,3 +40,12 @@ class EnvironmentSettingsTests(SimpleTestCase):
                 get_allowed_hosts(debug=False),
                 ["example.com", "api.example.com"],
             )
+
+    def test_integer_settings_are_validated(self):
+        with patch.dict("os.environ", {"SETTING": "10"}):
+            self.assertEqual(get_int("SETTING", default=5, minimum=1, maximum=30), 10)
+
+        for value in ("not-a-number", "0", "31"):
+            with self.subTest(value=value), patch.dict("os.environ", {"SETTING": value}):
+                with self.assertRaises(ImproperlyConfigured):
+                    get_int("SETTING", default=5, minimum=1, maximum=30)
